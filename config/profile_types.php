@@ -9,5 +9,8 @@ return [
     ],
     'admin' => [
         'model' => App\Models\Admin::class,
+    ],
+    'call_center_employees' => [
+        'model' => \App\Models\CallCenter::class,
     ]
 ];

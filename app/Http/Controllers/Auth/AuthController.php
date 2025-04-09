@@ -3,30 +3,26 @@
 namespace App\Http\Controllers\Auth;
 
 use Exception;
-use App\Models\User;
+
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Http\Requests\LoginRequest;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\RegisterUserRequest;
+use Tymon\JWTAuth\Exceptions\JWTException;
 use App\Http\Resources\ApiResponseResource;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
-class RegisteredUserController extends Controller
+class AuthController extends Controller
 {
-    /**
-     * Handle an incoming registration request.
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
+    //
     public function store(RegisterUserRequest $request): JsonResponse
     {
 
@@ -118,7 +114,20 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
-        Auth::login($user);
+        // Auth::login($user);
+
+        // try {
+        //     $token = JWTAuth::fromUser($user);
+        // } catch (JWTException $e) {
+        //     // return response()->json(['error' => 'Could not create token'], 500);
+        //     return (new ApiResponseResource(
+        //         [
+        //             'status' => '500 Internal Server Error',
+        //             'message' => 'Error Creating token',
+        //             'data' => null
+        //         ]
+        //     ))->response()->setStatusCode(500);
+        // }
 
         return (new ApiResponseResource([
             'status' => '201 Created',
@@ -126,5 +135,79 @@ class RegisteredUserController extends Controller
             'data' => $user
         ]))->response()->setStatusCode(201);
         
+    }
+
+    public function login(LoginRequest $request)
+    {
+
+        // dd($request);
+        $credentials = $request->only('phone_number', 'password');
+
+        if (!$token = JWTAuth::attempt($credentials)) {
+            // return response()->json([
+                // 'success' => false,
+                // 'message' => 'Invalid phone number or password'
+            // ], 401);
+
+            return (new ApiResponseResource([
+                'status' => '401 Unauthorized',
+                'message' => 'Invalid phone number or password',
+                'data' => null
+            ]))->response()->setStatusCode(401); 
+
+        }
+
+        // return response()->json([
+        //     'success' => true,
+        //     'token' => $token,
+        //     'token_type' => 'bearer',
+        //     'expires_in' => JWTAuth::getTTL() * 60,
+        // ]);
+
+        return (new ApiResponseResource([
+            'status' => '200 Ok',
+            'message' => 'User logged in successfully',
+            'data' => $token
+        ]))->response()->setStatusCode(200);
+    }
+
+    public function logout()
+    {
+        try {
+            JWTAuth::invalidate(JWTAuth::getToken());
+        } catch (JWTException $e) {
+            return response()->json(['error' => 'Failed to logout, please try again'], 500);
+        }
+
+        return response()->json(['message' => 'Successfully logged out']);
+    }
+
+    public function change(Request $request)
+    {
+        $request->validate([
+            'current_password' => ['required'],
+            'new_password' => ['required', 'min:6', 'confirmed'],
+        ]);
+
+        $user = Auth::user();
+
+        // dd(get_class_methods($user));
+
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'message' => 'Current password is incorrect.'
+            ], 400);
+        }
+
+        $user->password = Hash::make($request->new_password);
+
+        // Log::info("Password");
+        // $user->
+        $user->save();
+
+        return response()->json([
+            'message' => 'Password changed successfully.'
+        ]);
     }
 }

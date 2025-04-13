@@ -18,14 +18,14 @@ class UserController extends Controller
             $users = User::all();
             return (new ApiResponseResource([
                 'status' => '200 Ok',
-                'message' => 'Users retrieved successfully',
+                'message' => 'Users retrieved successfully', // NEED TO ADD ARABIC TRANSLATION FOR THIS
                 'data' => $users
             ]))->response()->setStatusCode(200);
         } catch (Exception $e)
         {
             return (new ApiResponseResource([
                 'status' => '400 Bad request',
-                'message' => 'Error retrieving users',
+                'message' => __('messages.failed'),
                 'data' => $e
             ]))->response()->setStatusCode(400);
         }

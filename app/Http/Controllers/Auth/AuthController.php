@@ -10,6 +10,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Requests\LoginRequest;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ChangePasswordRequest;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -59,7 +60,7 @@ class AuthController extends Controller
             DB::rollBack();
             return (new ApiResponseResource([
                 'status' => '500 Internal Server Error',
-                'message' => 'User creation failed',
+                'message' => __('messages.failed'),
                 'data' => null
             ]))->response()->setStatusCode(500);
         }
@@ -93,7 +94,7 @@ class AuthController extends Controller
             Log::error($e);
             return (new ApiResponseResource([
                 'status' => '500 Internal Server Error',
-                'message' => 'Registration failed',
+                'message' => __('messages.failed'),
                 'data' => null
             ]))->response()->setStatusCode(500);
         }
@@ -131,7 +132,7 @@ class AuthController extends Controller
 
         return (new ApiResponseResource([
             'status' => '201 Created',
-            'message' => 'User Registered Successfully',
+            'message' => __('auth.success_registration'),
             'data' => $user
         ]))->response()->setStatusCode(201);
         
@@ -151,7 +152,8 @@ class AuthController extends Controller
 
             return (new ApiResponseResource([
                 'status' => '401 Unauthorized',
-                'message' => 'Invalid phone number or password',
+                // 'message' => 'Invalid phone number or password',
+                'message' => __('auth.password'),
                 'data' => null
             ]))->response()->setStatusCode(401); 
 
@@ -166,7 +168,7 @@ class AuthController extends Controller
 
         return (new ApiResponseResource([
             'status' => '200 Ok',
-            'message' => 'User logged in successfully',
+            'message' => __('auth.success_loggedin'),
             'data' => $token
         ]))->response()->setStatusCode(200);
     }
@@ -176,18 +178,14 @@ class AuthController extends Controller
         try {
             JWTAuth::invalidate(JWTAuth::getToken());
         } catch (JWTException $e) {
-            return response()->json(['error' => 'Failed to logout, please try again'], 500);
+            return response()->json(['error' => __('messages.failed')], 500);
         }
 
-        return response()->json(['message' => 'Successfully logged out']);
+        return response()->json(['message' => __('auth.success_loggedout')]);
     }
 
-    public function change(Request $request)
+    public function change(ChangePasswordRequest $request)
     {
-        $request->validate([
-            'current_password' => ['required'],
-            'new_password' => ['required', 'min:6', 'confirmed'],
-        ]);
 
         $user = Auth::user();
 
@@ -196,7 +194,7 @@ class AuthController extends Controller
 
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json([
-                'message' => 'Current password is incorrect.'
+                'message' => __('validation.current_password')
             ], 400);
         }
 
@@ -207,7 +205,7 @@ class AuthController extends Controller
         $user->save();
 
         return response()->json([
-            'message' => 'Password changed successfully.'
+            'message' => __('auth.success_change_password')
         ]);
     }
 }

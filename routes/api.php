@@ -18,11 +18,23 @@ use App\Http\Controllers\Auth\AuthController;
 // });
 
 
-Route::post('/register', [AuthController::class, 'store']);
+Route::post('/register', [AuthController::class, 'store'])
+    ->middleware('throttle:5,1');
 
 Route::get('/something', [testController::class, 'test']);
 
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])
+     ->middleware('throttle:5,1');
+
+    //  use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+
+Route::post('/throttle-test', function (Request $request) {
+    Log::info('Throttle route hit');
+
+    return response()->json(['message' => 'You hit the throttle test route']);
+})->middleware('throttle:2,1'); // 2 attempts per minute
+
 
 // Route::get('/users', [UserController::class, 'index']);
 

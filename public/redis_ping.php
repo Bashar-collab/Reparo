@@ -12,6 +12,8 @@ $client = new Predis\Client([
     'password' => getenv('REDIS_PASSWORD'),
 ]);
 
+echo "Redis host: " . getenv('REDIS_HOST');
+
 try {
     $pong = $client->ping();
     echo "Redis ping response: " . $pong;
